@@ -1,0 +1,17 @@
+{
+  "auto-format": {
+    "enabled": true,
+    "PostToolUse": [
+      {
+        "matcher": "write_file|edit_file|write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c 'import json, sys, subprocess, os, shutil; data = json.load(sys.stdin); args = data.get(\"toolCall\", {}).get(\"args\", {}); path = args.get(\"Path\") or args.get(\"TargetFile\") or \"\"; ext = os.path.splitext(path)[1].lower(); subprocess.run([\"ruff\", \"format\", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) if ext == \".py\" and os.path.isfile(path) and shutil.which(\"ruff\") else (subprocess.run([\"npx\", \"--no-install\", \"prettier\", \"--write\", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) if ext in (\".ts\", \".tsx\", \".js\", \".jsx\", \".css\") and os.path.isfile(path) and shutil.which(\"npx\") else None)' 2>/dev/null || true; printf '{}'",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

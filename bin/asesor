@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TIPO="${1:-plan}"
+case "$TIPO" in
+  plan|atasco|auditoria|enfoque) ;;
+  *)
+    echo "Error: Tipo de consulta inválido '$TIPO'. Valores permitidos: plan, atasco, auditoria, enfoque." >&2
+    exit 1
+    ;;
+esac
+
+CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude || true)}"
+
+if [ -z "$CLAUDE_BIN" ] && [ -x "$HOME/.local/share/mise/installs/claude/latest/claude" ]; then
+  CLAUDE_BIN="$HOME/.local/share/mise/installs/claude/latest/claude"
+fi
+
+if [ -z "$CLAUDE_BIN" ] || [ ! -x "$CLAUDE_BIN" ]; then
+  echo "Error: No se encontró el binario 'claude' en PATH ni en ~/.local/share/mise/installs/claude/latest/claude." >&2
+  exit 1
+fi
+
+SYS_PROMPT="Eres el Asesor Técnico Senior (Claude Opus). Tu rol es estrictamente consultivo y de SOLO LECTURA: analizas arquitectura, detectas riesgos, evalúas causas raíz, validas invariantes de datos y auditas cambios a partir exclusivamente del informe recibido por entrada estándar. No tienes acceso a herramientas ni ves archivos en vivo. Responde en español de forma directa, estructurada, crítica y accionable. Tipo de consulta actual: ${TIPO}."
+
+TMP_CWD="$(mktemp -d)"
+trap 'rm -rf "$TMP_CWD"' EXIT
+cd "$TMP_CWD"
+
+"$CLAUDE_BIN" -p \
+  --model opus \
+  --tools "" \
+  --strict-mcp-config --mcp-config '{"mcpServers":{}}' \
+  --no-session-persistence \
+  --system-prompt "$SYS_PROMPT" \
+  "Analiza el siguiente informe de tipo '${TIPO}' y emite tu dictamen técnico senior (riesgos, hallazgos, observaciones críticas y veredicto):"
