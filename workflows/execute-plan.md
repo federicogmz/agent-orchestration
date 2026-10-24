@@ -1,26 +1,26 @@
 ---
-description: (Modo manual opcional) Ejecuta el último Plan de Implementación aprobado usando Gemini 3.8 Flash, escribiendo todo el código y ejecutando las validaciones hasta pasar sin desviarse del diseño.
+description: (Optional manual mode) Executes the latest approved Implementation Plan using Gemini 3.8 Flash, writing all required code and running validations until passing without deviating from the frozen design.
 ---
 
-# Workflow `/execute-plan` — Ejecución de Alta Velocidad (Gemini 3.8 Flash)
+# Workflow `/execute-plan` — High-Speed Execution (Gemini 3.8 Flash)
 
-*(Nota: Este workflow es el complemento manual opcional de `/plan-argon` cuando el usuario desea ejecutar un `implementation_plan.md` previamente congelado).*
+*(Note: This workflow is the optional manual counterpart to `/plan-argon` when the user wishes to execute a previously frozen `implementation_plan.md`).*
 
-Sigue estos pasos sin desviarte del diseño congelado:
+Follow these steps strictly without deviating from the frozen design:
 
-1. **Lectura del Plan Congelado:**
-   - Lee el último artefacto `implementation_plan.md` en el directorio de artefactos de la conversación (`<appDataDir>/brain/<conversation-id>/implementation_plan.md`) o el plan aprobado en los turnos recientes.
-   - Respeta estrictamente las firmas, contratos, nombres de archivos y restricciones definidos por el Arquitecto (Argon).
+1. **Read the Frozen Plan:**
+   - Read the latest `implementation_plan.md` artifact in the conversation artifact directory (`<appDataDir>/brain/<conversation-id>/implementation_plan.md`) or the approved plan from recent session turns.
+   - Strictly adhere to the signatures, contracts, filenames, and constraints defined by the Architect (Argon).
 
-2. **Implementación Directa o en Enjambre:**
-   - Si los cambios abarcan módulos independientes en paralelo (más de 2 archivos desacoplados), activa la skill `hybrid-swarm` para delegar en subagentes `implementer` con `Model: "flash"`.
-   - Si los cambios son secuenciales, implementa el código completo directamente usando `write_file` y `edit_file` sin dejar placeholders ni `TODO`s incompletos.
-   - Si el hook `PostToolUse` está activo, ejecutará automáticamente el formateador tras cada edición; no gastes turnos adicionales formateando manualmente.
+2. **Direct or Swarm Implementation:**
+   - If changes span decoupled parallel modules (more than 2 independent files), trigger the `hybrid-swarm` skill to delegate to `implementer` subagents with `Model: "flash"`.
+   - If changes are sequential, implement the full code directly using `write_file` and `edit_file` without leaving incomplete placeholders or `TODO`s.
+   - If the `PostToolUse` hook is active, it automatically formats code after each edit; do not spend extra turns formatting manually.
 
-3. **Verificación y Pruebas Automatizadas:**
-   - Ejecuta los comandos de validación especificados en el plan (usando `<PROJECT_ROOT>/.venv/bin/python` para scripts de Python o `npm`/`npx` para módulos web).
-   - Nunca ejecutes `--apply` contra bases de datos de producción sin autorización explícita del usuario y respaldo previo en `backups/`.
-   - Si algún test o validación falla, corrígelo en máximo 2 iteraciones. Si persiste un bloqueo de diseño o arquitectura, detente y consulta al asesor (`asesor "atasco"`) o escala a **Gemini 4 Argon**.
+3. **Automated Verification and Testing:**
+   - Execute the validation commands specified in the plan (using `<PROJECT_ROOT>/.venv/bin/python` for Python scripts or `npm`/`npx` for web modules).
+   - Never execute `--apply` against production databases without explicit user authorization and prior backup in `backups/`.
+   - If any test or validation fails, fix it within a maximum of 2 iterations. If a design or architectural blocker persists, stop immediately and consult the advisor (`asesor "stuck"` or `asesor "atasco"`) or escalate to **Gemini 4 Argon**.
 
-4. **Reporte Conciso de Cierre:**
-   - Entrega un resumen breve con enlaces clicables a los archivos creados/modificados y la salida de validación.
+4. **Concise Completion Report:**
+   - Deliver a brief summary with clickable links to all created/modified files and validation output.

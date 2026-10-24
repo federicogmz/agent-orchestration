@@ -17,16 +17,16 @@ for arg in "$@"; do
     --with-hooks) WITH_HOOKS=true ;;
     --uninstall) UNINSTALL=true ;;
     -h|--help)
-      echo "Uso: ./install.sh [--force] [--with-hooks] [--uninstall]"
-      echo "  --force       Sobrescribe ~/.agents existente con las plantillas del repo (crea respaldo .bak.<timestamp>)."
-      echo "                ADVERTENCIA: Si tienes contexto privado en ~/.agents/rules, se moverá al respaldo .bak."
-      echo "  --with-hooks  Habilita el hook PostToolUse (ruff format / prettier) en el plugin global."
-      echo "  --uninstall   Elimina el plugin global de ~/.gemini/config/plugins/hybrid-orchestration"
-      echo "                (conserva ~/.agents, ~/.local/bin/asesor y respaldos en $BACKUP_DIR)."
+      echo "Usage: ./install.sh [--force] [--with-hooks] [--uninstall]"
+      echo "  --force       Overwrite existing ~/.agents with repository templates (saves a full copy to .bak.<timestamp> first)."
+      echo "                WARNING: Any private project context in ~/.agents/rules will be overwritten; restore SECTION 1 from the .bak copy afterwards."
+      echo "  --with-hooks  Enable the PostToolUse auto-formatting hook (ruff format / prettier) in the global plugin."
+      echo "  --uninstall   Remove the global plugin from ~/.gemini/config/plugins/hybrid-orchestration"
+      echo "                (preserves ~/.agents, ~/.local/bin/asesor, and backups in $BACKUP_DIR)."
       exit 0
       ;;
     *)
-      echo "Error: Argumento desconocido '$arg'. Usa --help para ver las opciones disponibles." >&2
+      echo "Error: Unknown argument '$arg'. Use --help to see available options." >&2
       exit 1
       ;;
   esac
@@ -34,7 +34,7 @@ done
 
 if [ "$UNINSTALL" = true ]; then
   rm -rf "$PLUGIN_DIR"
-  echo "[OK] Plugin global eliminado de $PLUGIN_DIR (se conservaron $AGENTS_DIR, $BIN_DIR/asesor y respaldos)."
+  echo "[OK] Global plugin removed from $PLUGIN_DIR (preserved $AGENTS_DIR, $BIN_DIR/asesor, and backups)."
   exit 0
 fi
 
@@ -47,29 +47,29 @@ safe_symlink() {
     mkdir -p "$BACKUP_DIR"
     local bak="${BACKUP_DIR}/$(basename "$dst").bak.$(date +%s)"
     mv "$dst" "$bak"
-    echo "[BACKUP] Elemento previo $dst respaldado en $bak"
+    echo "[BACKUP] Existing item $dst backed up to $bak"
   fi
   ln -sfn "$src" "$dst"
 }
 
-# 1. Instalar ~/.agents sin pisar configuraciones existentes a menos que se pase --force
+# 1. Install ~/.agents without overwriting existing configuration unless --force is passed
 if [ -d "$AGENTS_DIR/rules" ] && [ "$FORCE" = false ]; then
-  echo "[INFO] Se detectó configuración existente en $AGENTS_DIR/rules (se conserva intacta; usa --force para reemplazar con respaldo)."
+  echo "[INFO] Existing configuration detected in $AGENTS_DIR/rules (kept intact; pass --force to replace with backup)."
 else
   if [ -d "$AGENTS_DIR" ]; then
     BAK="${AGENTS_DIR}.bak.$(date +%s)"
     cp -a "$AGENTS_DIR" "$BAK"
-    echo "[BACKUP] Respaldo creado en $BAK"
+    echo "[BACKUP] Backup created at $BAK"
   fi
   mkdir -p "$AGENTS_DIR/rules" "$AGENTS_DIR/skills/hybrid-swarm" "$AGENTS_DIR/workflows"
   cp -f "$REPO_DIR/rules/"*.md "$AGENTS_DIR/rules/"
   cp -f "$REPO_DIR/skills/hybrid-swarm/SKILL.md" "$AGENTS_DIR/skills/hybrid-swarm/SKILL.md"
   cp -f "$REPO_DIR/workflows/"*.md "$AGENTS_DIR/workflows/"
   cp -f "$REPO_DIR/hooks.json" "$AGENTS_DIR/hooks.json"
-  echo "[OK] Plantillas instaladas en $AGENTS_DIR"
+  echo "[OK] Templates installed in $AGENTS_DIR"
 fi
 
-# Asegurar que workflows y hooks.json existan en ~/.agents si faltaban
+# Ensure workflows and hooks.json exist in ~/.agents if missing
 mkdir -p "$AGENTS_DIR/workflows"
 for wf in "$REPO_DIR/workflows/"*.md; do
   base_wf="$(basename "$wf")"
@@ -77,7 +77,7 @@ for wf in "$REPO_DIR/workflows/"*.md; do
 done
 [ -f "$AGENTS_DIR/hooks.json" ] || cp -f "$REPO_DIR/hooks.json" "$AGENTS_DIR/hooks.json"
 
-# 2. Registrar el plugin global en ~/.gemini/config/plugins/hybrid-orchestration
+# 2. Register the global plugin in ~/.gemini/config/plugins/hybrid-orchestration
 cp -f "$REPO_DIR/plugin.json" "$PLUGIN_DIR/plugin.json"
 safe_symlink "$AGENTS_DIR/rules" "$PLUGIN_DIR/rules"
 safe_symlink "$AGENTS_DIR/skills" "$PLUGIN_DIR/skills"
@@ -88,18 +88,20 @@ else
   rm -f "$PLUGIN_DIR/hooks.json"
 fi
 
-# 3. Instalar binario asesor sino existe o si se usa --force
+# 3. Install asesor CLI binary if missing, if --force is passed, or warn if out of sync
 if [ ! -f "$BIN_DIR/asesor" ] || [ "$FORCE" = true ]; then
   cp -f "$REPO_DIR/bin/asesor" "$BIN_DIR/asesor"
   chmod +x "$BIN_DIR/asesor"
-  echo "[OK] CLI asesor instalado en $BIN_DIR/asesor"
+  echo "[OK] CLI binary 'asesor' installed at $BIN_DIR/asesor"
+elif ! cmp -s "$REPO_DIR/bin/asesor" "$BIN_DIR/asesor"; then
+  echo "[WARN] $BIN_DIR/asesor differs from repository version (run './install.sh --force' or 'cp -f bin/asesor $BIN_DIR/asesor' to update)."
 else
-  echo "[INFO] $BIN_DIR/asesor ya existe (conservado; usa --force para actualizarlo)."
+  echo "[INFO] $BIN_DIR/asesor is up to date."
 fi
 
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
-  *) echo "[WARN] $BIN_DIR no está en tu PATH. Añade 'export PATH=\"\$HOME/.local/bin:\$PATH\"' a tu shell rc." ;;
+  *) echo "[WARN] $BIN_DIR is not in your PATH. Add 'export PATH=\"\$HOME/.local/bin:\$PATH\"' to your shell rc." ;;
 esac
 
-echo "[OK] Plugin global hybrid-orchestration activo en $PLUGIN_DIR"
+echo "[OK] Global plugin 'hybrid-orchestration' is active in $PLUGIN_DIR"

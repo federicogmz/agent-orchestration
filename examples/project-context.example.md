@@ -1,20 +1,20 @@
-# Ejemplo de Contexto Estático de Proyecto (`SECCIÓN 1` de `architecture-10-90.md`)
+# Example Project Static Context (`SECTION 1` of `architecture-10-90.md`)
 
-Puedes copiar y adaptar este bloque dentro de la **SECCIÓN 1** de tu archivo local `~/.agents/rules/architecture-10-90.md` (o en `<PROJECT_ROOT>/.agents/rules/architecture-10-90.md`) para que el prefijo estático de tu proyecto quede cacheado:
+You can copy and adapt this block into **SECTION 1** of your local `~/.agents/rules/architecture-10-90.md` file (or in `<PROJECT_ROOT>/.agents/rules/architecture-10-90.md`) so that your project's static prefix remains cached across sessions:
 
 ```markdown
-## SECCIÓN 1: CONTEXTO ESTÁTICO (INMUTABLE)
+## SECTION 1: STATIC CONTEXT (IMMUTABLE)
 
-### 1.1 Stack Tecnológico Detectado
-- **Backend / ETL:** Python 3.12+ (`.venv` en `/opt/my_project/.venv`), FastAPI, SQLAlchemy, Pytest.
-- **Frontend:** TypeScript, React, Vite, TailwindCSS en `/opt/my_project/webapp/`.
-- **Infraestructura de Datos (Entornos ficticios de ejemplo / RFC 5737 `192.0.2.0/24`):**
-  - **BD Producción:** PostgreSQL 17 + PostGIS en `192.0.2.10:5432` (`app_db`).
-  - **BD Pruebas (Staging):** PostgreSQL 17 en `192.0.2.20:5432` (`app_db_staging`).
-  - **Object Storage (S3/MinIO):** `http://192.0.2.30:9000` (buckets `assets-prod` y `assets-raw`).
+### 1.1 Detected Technology Stack
+- **Backend / ETL:** Python 3.12+ (`.venv` in `/opt/my_project/.venv`), FastAPI, SQLAlchemy, Pytest.
+- **Frontend:** TypeScript, React, Vite, TailwindCSS in `/opt/my_project/webapp/`.
+- **Data Infrastructure (Mock example environments / RFC 5737 `192.0.2.0/24`):**
+  - **Production DB:** PostgreSQL 17 + PostGIS at `192.0.2.10:5432` (`app_db`).
+  - **Staging / Test DB:** PostgreSQL 17 at `192.0.2.20:5432` (`app_db_staging`).
+  - **Object Storage (S3/MinIO):** `http://192.0.2.30:9000` (buckets `assets-prod` and `assets-raw`).
 
-### 1.2 Invariantes del Proyecto
-1. **Idempotencia en BD de Producción:**
-   - Todo script de migración o actualización opera en modo `dry-run` por defecto y requiere `--apply` explícito tras crear un respaldo en `backups/`.
-   - Las claves primarias y secuencias históricas son estrictamente **APPEND-ONLY**.
+### 1.2 Project Invariants
+1. **Production Database Safety & Idempotency:**
+   - Any migration or update script operates in `dry-run` simulation mode by default and requires an explicit `--apply` flag after generating a backup in `backups/`.
+   - Primary keys and historical sequence IDs are strictly **APPEND-ONLY**.
 ```

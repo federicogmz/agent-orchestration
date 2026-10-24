@@ -1,169 +1,170 @@
-# Orquestación Multi-Agente Híbrida (Arquitectura 10/90)
+# Hybrid 10/90 Multi-Agent Orchestration Framework
 
-Framework de orquestación multi-agente modular y de alto rendimiento para **Google Antigravity 2.0** y su interfaz de línea de comandos (**Antigravity CLI / `agy`**), complementado con asesoría técnica senior de solo lectura vía **Anthropic Claude Code CLI (`claude`)**.
-
----
-
-## 1. Resumen Ejecutivo
-
-El desarrollo asistido por modelos de lenguaje a escala se enfrenta frecuentemente a dos cuellos de botella:
-1. **Saturación de contexto y degradación de razonamiento:** El modelo principal gasta tokens y atención en tareas mecánicas (explorar árboles de directorios, volcar archivos o formatear sintaxis), degradando su capacidad arquitectónica.
-2. **Coste y latencia excesiva:** Asignar modelos de razonamiento profundo a tareas repetitivas o lectura masiva dispara los tiempos de respuesta y agota rápidamente las cuotas de inferencia.
-
-Este repositorio implementa la **Arquitectura Híbrida 10/90**, diseñada para desacoplar el razonamiento estratégico de la ejecución técnica masiva:
-
-* **10% — Arquitecto / Orquestador Principal (Gemini 4 Argon):**
-  Opera en niveles de razonamiento *Medium* o *High*. Recibe los requerimientos del usuario, define la arquitectura del sistema, congela interfaces y contratos de tipos, arbitra dependencias y realiza la entrega final garantizando invariantes del proyecto.
-* **90% — Subagentes de Exploración e Implementación (Gemini 3.8 Flash):**
-  Despachados dinámicamente mediante la skill `hybrid-swarm` con `Model: "flash"`. Se encargan de la lectura masiva de archivos, inspección de logs y esquemas, escritura de código en paralelo y ejecución de suites de pruebas locales sin saturar la ventana de contexto del arquitecto.
-* **Asesor Técnico Senior (Claude Opus vía CLI `asesor`):**
-  Opera como un consultor externo de **solo lectura**, invocado en cuatro puertas de control críticas (`plan`, `atasco`, `auditoria` y `enfoque`) a través de la entrada estándar (`stdin`), garantizando análisis independiente de causas raíz y detección de regresiones.
+A modular, high-efficiency multi-agent orchestration framework for **Google Antigravity 2.0** and its command-line interface (**Antigravity CLI / `agy`**), paired with read-only senior architectural review via **Anthropic Claude Code CLI (`claude`)**.
 
 ---
 
-## 2. Diagrama de Interacción y Flujo de Trabajo
+## 1. Executive Summary
 
-El siguiente diagrama detalla el flujo de información, delegación y control entre los tres componentes del sistema:
+Large-scale AI-assisted software engineering frequently hits two major bottlenecks:
+1. **Context Window Pollution & Reasoning Degradation:** When the primary frontier model spends tokens and attention on mechanical tasks (scanning directory trees, dumping large files, or fixing formatting), its architectural focus degrades.
+2. **Latency & Token Quota Exhaustion:** Using deep-reasoning models for repetitive boilerplate generation or broad codebase exploration inflates latency and rapidly burns inference quotas.
+
+This repository implements the **Hybrid 10/90 Architecture**, decoupling high-level architectural reasoning from parallel execution:
+
+* **10% — Lead Architect & Orchestrator (Gemini 4 Argon):**
+  Operates at *Medium* or *High* reasoning effort. Receives natural-language user requests, designs system architecture, freezes type contracts and interfaces, arbitrates dependencies, and validates final deliverables against project invariants.
+* **90% — Exploration & Implementation Swarm (Gemini 3.8 Flash):**
+  Dynamically spawned via the `hybrid-swarm` skill with `Model: "flash"`. Handles high-volume file exploration, schema/log inspection, parallel code implementation, and local test execution without polluting the Lead Architect's context window.
+* **Senior Technical Advisor (Claude Opus via `asesor` CLI):**
+  Operates as a strictly **read-only** external consultant invoked at four mandatory quality gates (`plan`, `stuck`/`atasco`, `audit`/`auditoria`, and `approach`/`enfoque`) over standard input (`stdin`), providing independent root-cause analysis and pre-commit regression checks.
+
+---
+
+## 2. Interaction & Workflow Diagram
+
+The following diagram illustrates the delegation flow, reactive notifications, and quality gates across all three tiers:
 
 ```mermaid
 flowchart TD
-    User(["Usuario / Requerimiento en Lenguaje Natural"]) --> Argon["Arquitecto Principal\n(Gemini 4 Argon - 10%)\nDiseño y Contratos"]
+    User(["User / Natural Language Request"]) --> Argon["Lead Architect\n(Gemini 4 Argon - 10%)\nArchitecture & Frozen Contracts"]
 
-    subgraph Consultoria ["Asesor Técnico Senior (Solo Lectura)"]
-        AsesorCLI["CLI 'asesor <tipo> < informe.md'\n(Claude Opus vía Claude Code CLI)"]
-        GatePlan["Puerta 1: 'plan'\n(Cambios >= 3 archivos o arquitectura)"]
-        GateAtasco["Puerta 2: 'atasco'\n(Segundo intento fallido consecutivo)"]
-        GateAuditoria["Puerta 3: 'auditoria'\n(Revisión estricta de git diff pre-commit)"]
-        GateEnfoque["Puerta 4: 'enfoque'\n(Bloqueo técnico o cambio de hipótesis)"]
+    subgraph Advisory ["Senior Technical Advisor (Read-Only)"]
+        AsesorCLI["CLI 'asesor <type> < report.md'\n(Claude Opus via Claude Code CLI)"]
+        GatePlan["Gate 1: 'plan'\n(Changes >= 3 files or architecture)"]
+        GateStuck["Gate 2: 'stuck' / 'atasco'\n(Second consecutive failure)"]
+        GateAudit["Gate 3: 'audit' / 'auditoria'\n(Strict pre-commit git diff review)"]
+        GateApproach["Gate 4: 'approach' / 'enfoque'\n(Technical blocker or pivot)"]
         AsesorCLI --> GatePlan
-        AsesorCLI --> GateAtasco
-        AsesorCLI --> GateAuditoria
-        AsesorCLI --> GateEnfoque
+        AsesorCLI --> GateStuck
+        AsesorCLI --> GateAudit
+        AsesorCLI --> GateApproach
     end
 
-    subgraph Enjambre ["Enjambre de Subagentes (Gemini 3.8 Flash - 90%)"]
-        Explorer["Subagente 'explorer'\n(Solo Lectura, Model: flash)\nMapeo de firmas, esquemas y dependencias"]
-        Implementer["Subagente 'implementer'\n(Lectura/Escritura, Model: flash)\nImplementación paralela y pruebas locales"]
+    subgraph Swarm ["Subagent Swarm (Gemini 3.8 Flash - 90%)"]
+        Explorer["Subagent 'explorer'\n(Read-Only, Model: flash)\nMaps signatures, schemas & dependencies"]
+        Implementer["Subagent 'implementer'\n(Read/Write, Model: flash)\nParallel implementation & local tests"]
     end
 
-    subgraph Hooks ["Automatización Transversal"]
-        PostTool["Hook PostToolUse (hooks.json)\nAuto-formato y Linting transparente\n(ruff para Python / prettier para JS/TS)"]
+    subgraph Hooks ["Cross-Cutting Automation"]
+        PostTool["PostToolUse Hook (hooks.json)\nSilent Auto-Formatting\n(ruff format for Python / prettier for JS/TS/CSS)"]
     end
 
-    Argon -->|"1. Despacha exploración rápida"| Explorer
-    Explorer -->|"2. Devuelve resumen compacto"| Argon
-    Argon -.->|"3. Consulta previa opcional"| AsesorCLI
-    GatePlan -.->|"Dictamen y recomendaciones"| Argon
-    Argon -->|"4. Congela contratos e invoca"| Implementer
-    Implementer -->|"5. Modificaciones de código"| PostTool
-    PostTool -->|"Formato limpio verificado"| Implementer
-    Implementer -->|"6. Notificación reactiva y resultados"| Argon
-    Argon -.->|"7. Si hay 2 fallos consecutivos"| GateAtasco
-    Argon -.->|"8. Auditoría pre-commit"| GateAuditoria
-    Argon -->|"9. Consolidación y validación final"| User
+    Argon -->|"1. Spawns fast exploration"| Explorer
+    Explorer -->|"2. Returns compact summary"| Argon
+    Argon -.->|"3. Pre-edit architectural review"| AsesorCLI
+    GatePlan -.->|"Verdict & risk analysis"| Argon
+    Argon -->|"4. Freezes contracts & invokes"| Implementer
+    Implementer -->|"5. File edits"| PostTool
+    PostTool -->|"Formatted code"| Implementer
+    Implementer -->|"6. Reactive wakeup & test summary"| Argon
+    Argon -.->|"7. On 2nd consecutive failure"| GateStuck
+    Argon -.->|"8. Pre-commit diff audit"| GateAudit
+    Argon -->|"9. Final verification & delivery"| User
 ```
 
 ---
 
-## 3. Estructura del Repositorio
+## 3. Repository Structure
 
-El proyecto organiza sus reglas, habilidades, flujos y utilidades bajo los estándares nativos de Google Antigravity:
+The repository follows Google Antigravity's native customization layout:
 
 ```text
 agent-orchestration/
-├── .gitignore                      # Exclusiones locales (local/, *.env, *.bak*)
-├── LICENSE                         # Licencia MIT
+├── .gitignore                      # Local exclusions (local/, scratch/, *.env, *.bak*)
+├── LICENSE                         # MIT License
 ├── bin/
-│   └── asesor                      # CLI de asesoría senior que conecta con Claude Opus
+│   └── asesor                      # Senior Advisor CLI wrapper for Claude Opus
 ├── examples/
-│   └── project-context.example.md  # Plantilla de ejemplo para contexto estático de proyecto
+│   └── project-context.example.md  # Example template for static project context
 ├── rules/
-│   ├── architecture-10-90.md       # Regla transversal: rol de Argon, delegación y contexto estático
-│   └── protocolo-asesor-opus.md    # Protocolo estricto de consulta a Claude Opus (4 puertas de control)
+│   ├── architecture-10-90.md       # Always-on rule: Argon role, 10/90 delegation & static context
+│   └── protocolo-asesor-opus.md    # Always-on rule: Senior Advisor protocol (4 mandatory gates)
 ├── skills/
 │   └── hybrid-swarm/
-│       └── SKILL.md                # Plantillas y parámetros para define_subagent e invoke_subagent
+│       └── SKILL.md                # Subagent templates & parameters for define_subagent / invoke_subagent
 ├── workflows/
-│   ├── plan-argon.md               # Workflow /plan-argon (modo manual opcional)
-│   └── execute-plan.md             # Workflow /execute-plan (modo manual opcional)
-├── hooks.json                      # Hook PostToolUse para formateo automático (ruff format + prettier)
-├── plugin.json                     # Manifiesto de registro como plugin global de Antigravity
-├── install.sh                      # Script de instalación idempotente y configurable
-└── README.md                       # Documentación técnica de la arquitectura
+│   ├── plan-argon.md               # Optional manual workflow: /plan-argon (contract freezing)
+│   └── execute-plan.md             # Optional manual workflow: /execute-plan (Flash execution)
+├── hooks.json                      # PostToolUse hook for silent formatting (ruff format + prettier)
+├── plugin.json                     # Global Antigravity plugin manifest
+├── install.sh                      # Idempotent, configurable installation script
+└── README.md                       # Technical documentation
 ```
 
-### Descripción de Componentes Clave
+### Key Components
 
-* **[`rules/architecture-10-90.md`](rules/architecture-10-90.md)**: Define las responsabilidades y prohibiciones de consumo de cuota para Gemini 4 Argon y establece la inmutabilidad de la sección de contexto estático para preservar el prefijo de caché de tokens de entrada.
-* **[`rules/protocolo-asesor-opus.md`](rules/protocolo-asesor-opus.md)**: Establece las condiciones obligatorias de consulta técnica externa, el formato del informe Markdown en `stdin` y el tratamiento crítico de sus respuestas.
-* **[`skills/hybrid-swarm/SKILL.md`](skills/hybrid-swarm/SKILL.md)**: Proporciona las especificaciones JSON listas para instanciar subagentes `explorer` (`EnableWriteTools: false`, `EnableMCPTools: false`) e `implementer` (`EnableWriteTools: true`, `EnableMCPTools: false`).
-* **[`workflows/plan-argon.md`](workflows/plan-argon.md)** y **[`workflows/execute-plan.md`](workflows/execute-plan.md)**: Flujos manuales opcionales para separar explícitamente el diseño de la ejecución cuando el usuario lo requiera.
-* **[`bin/asesor`](bin/asesor)**: Script Bash ejecutable que encapsula la invocación de `claude -p --model opus --tools "" --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence` desde un directorio temporal limpio, ejecutando al asesor sin herramientas locales ni servidores MCP.
-* **[`hooks.json`](hooks.json)**: Intercepta eventos `PostToolUse` tras escrituras o modificaciones (`write_file`, `edit_file`) para ejecutar silenciosamente `ruff format` sobre archivos `.py` y `prettier` sobre TypeScript, JavaScript y CSS.
-* **[`plugin.json`](plugin.json)**: Manifiesto que declara el plugin global `hybrid-orchestration` ante Antigravity.
-* **[`install.sh`](install.sh)**: Script automatizado de despliegue que instala el plugin global en `~/.gemini/config/plugins/hybrid-orchestration`, gestiona `~/.agents/` (como copia local independiente para permitir personalización privada en `~/.agents/rules` sin ensuciar el repositorio) y configura el binario `asesor`.
+* **[`rules/architecture-10-90.md`](rules/architecture-10-90.md)**: Defines quota boundaries for Gemini 4 Argon, automatic delegation to Flash subagents, and static prefix immutability to preserve input token cache hits.
+* **[`rules/protocolo-asesor-opus.md`](rules/protocolo-asesor-opus.md)**: Enforces the four mandatory consultation gates, the required Markdown `stdin` report template, and critical evaluation of advisor feedback.
+* **[`skills/hybrid-swarm/SKILL.md`](skills/hybrid-swarm/SKILL.md)**: Provides ready-to-use JSON definitions for `explorer` (`EnableWriteTools: false`, `EnableMCPTools: false`) and `implementer` (`EnableWriteTools: true`, `EnableMCPTools: false`).
+* **[`workflows/plan-argon.md`](workflows/plan-argon.md)** & **[`workflows/execute-plan.md`](workflows/execute-plan.md)**: Optional manual slash-command workflows when explicit human sign-off between planning and execution is desired.
+* **[`bin/asesor`](bin/asesor)**: Executable Bash wrapper that invokes `claude -p --model opus --tools "" --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence` inside an isolated temporary directory (`mktemp -d`), disabling local tools and MCP servers. Accepts both English (`plan`, `stuck`, `audit`, `approach`) and Spanish (`plan`, `atasco`, `auditoria`, `enfoque`) gate names.
+* **[`hooks.json`](hooks.json)**: Runs a `PostToolUse` handler after file write/edit operations to format `.py` files with `ruff format` and `.ts`/`.tsx`/`.js`/`.jsx`/`.css` files with `prettier`.
+* **[`plugin.json`](plugin.json)**: Declares the global `hybrid-orchestration` plugin for Antigravity.
+* **[`install.sh`](install.sh)**: Deploys the global plugin into `~/.gemini/config/plugins/hybrid-orchestration`, manages `~/.agents/` as an independent local directory (so private project context in `~/.agents/rules` is never overwritten unless `--force` is specified), and installs `~/.local/bin/asesor`.
 
 ---
 
-## 4. Guía de Instalación y Despliegue Global
+## 4. Global Installation & Deployment Guide
 
-El repositorio incluye un script de instalación (`install.sh`) diseñado para desplegar la arquitectura en cualquier estación de trabajo Linux o macOS.
+The included `install.sh` script configures the orchestration framework across your entire machine on Linux or macOS.
 
-### 4.1 Principio de Funcionamiento
+### 4.1 How Global Discovery Works
 
-El instalador registra un **Plugin Global** en Antigravity (`~/.gemini/config/plugins/hybrid-orchestration`), logrando que:
-1. Las reglas, skills y workflows estén disponibles de manera inmediata en **todos los workspaces y proyectos** abiertos con `agy` o Antigravity IDE, sin necesidad de duplicar archivos en cada repositorio.
-2. Se preserve intacta cualquier configuración local previa del usuario en `~/.agents/`, a menos que se solicite explícitamente su actualización con `--force`.
+The installer registers a **Global Plugin** in Antigravity (`~/.gemini/config/plugins/hybrid-orchestration`):
+1. All rules, skills, and workflows become automatically active across **every workspace and repository** opened with `agy` or Antigravity 2.0, without duplicating files per project.
+2. Any existing local configuration in `~/.agents/` is preserved intact by default, allowing you to maintain private project context in `~/.agents/rules/architecture-10-90.md` while keeping the git repository clean.
 
-### 4.2 Opciones de Instalación
+### 4.2 Installation Commands
 
-Ejecuta el script desde la raíz del repositorio:
+Run from the root of the repository:
 
 ```bash
-# 1. Instalación estándar (respeta ~/.agents existente e instala plugin global)
+# 1. Standard install (preserves existing ~/.agents and registers global plugin)
 ./install.sh
 
-# 2. Instalación con formateo y linting automático activado (PostToolUse hook)
+# 2. Install with automatic PostToolUse code formatting enabled
 ./install.sh --with-hooks
 
-# 3. Instalación forzada (actualiza ~/.agents creando respaldo .bak.<timestamp>)
+# 3. Force update ~/.agents and ~/.local/bin/asesor from repo templates (creates .bak.<timestamp> backup first)
 ./install.sh --force --with-hooks
 
-# 4. Desinstalación del plugin global
+# 4. Uninstall the global plugin (preserves ~/.agents, ~/.local/bin/asesor, and backups)
 ./install.sh --uninstall
 ```
 
-### 4.3 Qué Realiza el Script de Instalación
+### 4.3 What the Installation Script Does
 
-1. **Gestión de `~/.agents`:**
-   * Si `~/.agents/rules` ya existe y no se especifica `--force`, respeta los archivos existentes.
-   * Si no existe o se pasa `--force`, genera un respaldo preventivo (`~/.agents.bak.<timestamp>`) y copia las plantillas de `rules/`, `skills/`, `workflows/` y `hooks.json`.
-2. **Enlace del Plugin Global:**
-   * Crea `~/.gemini/config/plugins/hybrid-orchestration/plugin.json`.
-   * Enlaza simbólicamente las carpetas `rules/`, `skills/` y `workflows/` desde `~/.agents/` hacia el plugin global.
-   * Si se pasa `--with-hooks`, enlaza `hooks.json` en el plugin global para activar el formateador automático.
-3. **Instalación del CLI `asesor`:**
-   * Copia `bin/asesor` a `~/.local/bin/asesor` y le otorga permisos de ejecución (`chmod +x`).
-   * Valida que `~/.local/bin` forme parte de la variable de entorno `$PATH`.
-
----
-
-## 5. Nota sobre Versiones de Modelos y Nomenclatura
-
-En esta arquitectura, las designaciones de modelos representan roles funcionales dentro de la jerarquía de inferencia:
-
-* **Gemini 4 Argon / Arquitecto:** Alias representativo del modelo de razonamiento profundo de Google Antigravity configurado en el nivel de pensamiento superior (`Medium` o `High`). En entornos donde el selector muestre versiones sucesivas o alternativas de razonamiento, dicho modelo asumirá el rol de diseño y orquestación.
-* **Gemini 3.8 Flash / Ejecutor:** Alias del modelo optimizado para baja latencia, alto paralelismo y mínimo consumo de tokens en Antigravity (`Model: "flash"`).
-* **Claude Opus / Asesor Senior:** El CLI `bin/asesor` invoca `--model opus` a través del binario de Claude Code CLI (`claude`). El modelo exacto subyacente dependerá de la versión de Opus configurada en la suscripción y versión del CLI instalado localmente.
+1. **Manages `~/.agents`:**
+   * If `~/.agents/rules` already exists and `--force` is not passed, existing files are kept intact. *(Note: `--force` replaces your customized `architecture-10-90.md`, including SECTION 1; a full copy is saved to `~/.agents.bak.<timestamp>` so you can re-apply your static project context afterwards).*
+   * If it does not exist or `--force` is passed, it creates a preventive backup (`~/.agents.bak.<timestamp>`) and copies the templates from `rules/`, `skills/`, `workflows/`, and `hooks.json`.
+   * Filenames such as `rules/protocolo-asesor-opus.md` and `bin/asesor` are intentionally preserved so upgrades overwrite previous versions cleanly without leaving duplicate `always_on` rule files.
+2. **Links the Global Plugin:**
+   * Creates `~/.gemini/config/plugins/hybrid-orchestration/plugin.json`.
+   * Symlinks `rules/`, `skills/`, and `workflows/` from `~/.agents/` into the global plugin directory (backing up any pre-existing non-symlink directories to `~/.gemini/config/plugins/.hybrid-orchestration-backups/`).
+   * If `--with-hooks` is passed, symlinks `hooks.json` in the global plugin to enable automatic formatting; otherwise removes any previous `hooks.json` symlink.
+3. **Installs the `asesor` CLI:**
+   * Copies `bin/asesor` to `~/.local/bin/asesor` with executable permissions (`chmod +x`), or warns if an older version is already present without `--force`.
+   * Checks whether `~/.local/bin` is in `$PATH`.
 
 ---
 
-## 6. Convenciones de Seguridad e Invariantes
+## 5. Note on Model Names & Versioning
 
-1. **Topología de Red y Direccionamiento:**
-   * Todas las referencias a redes en la documentación y configuraciones de prueba utilizan bloques reservados para documentación según **RFC 5737** (`192.0.2.0/24` TEST-NET-1 o `198.51.100.0/24` TEST-NET-2).
-   * Queda estrictamente prohibido introducir direcciones IP privadas de producción o credenciales en texto plano dentro de repositorios o logs.
-2. **Aislamiento del Asesor:**
-   * El CLI `asesor` se invoca con `--tools "" --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence` en un directorio temporal vacío (`mktemp -d`), deshabilitando herramientas locales y servidores MCP. El asesor no tiene facultades de ejecución en el sistema operativo, ni persistencia de sesión, ni capacidad para alterar código por sí mismo.
-3. **Idempotencia y Operaciones Sensibles:**
-   * Toda mutación en bases de datos o infraestructuras de almacenamiento debe diseñarse con simulación por defecto (dry-run) y requerir banderas explícitas (ej. `--apply`) precedidas de respaldos locales.
+Model identifiers in this framework represent functional tiers within the orchestration hierarchy:
+
+* **Gemini 4 Argon (Lead Architect):** Representative alias for the deep-reasoning model in Google Antigravity configured at *Medium* or *High* thinking effort. In environments where the model selector displays newer or alternative reasoning versions, that model assumes the architect and orchestrator role.
+* **Gemini 3.8 Flash (Swarm Executor):** Alias for Antigravity's low-latency, high-parallelism model (`Model: "flash"`).
+* **Claude Opus (Senior Advisor):** `bin/asesor` invokes `--model opus` via the local Claude Code CLI (`claude`). The exact underlying model version depends on the Opus version configured in your local subscription and CLI installation.
+
+---
+
+## 6. Security & Operational Invariants
+
+1. **Network Topology & Addressing (RFC 5737):**
+   * All network references in documentation and example configurations use reserved documentation blocks defined in **RFC 5737** (`192.0.2.0/24` TEST-NET-1 or `198.51.100.0/24` TEST-NET-2).
+   * Committing real private production IP addresses or plaintext credentials into repositories or logs is strictly prohibited.
+2. **Advisor Isolation:**
+   * The `asesor` CLI is invoked with `--tools "" --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence` inside an empty temporary directory (`mktemp -d`), disabling local tools and MCP servers. The advisor has no operating-system execution privileges, no session persistence, and no ability to modify code on its own.
+3. **Idempotency & Sensitive Operations:**
+   * Every mutation targeting databases or storage infrastructure must default to simulation mode (`dry-run`) and require explicit flags (e.g., `--apply`) preceded by verified local backups in `backups/`.

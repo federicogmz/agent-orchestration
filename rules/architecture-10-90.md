@@ -1,71 +1,71 @@
 ---
 trigger: always_on
-description: Arquitectura híbrida 10/90 (Gemini 4 Argon + Gemini 3.8 Flash) y plantilla de contexto estático inmutable.
+description: Hybrid 10/90 architecture (Gemini 4 Argon + Gemini 3.8 Flash) and immutable static context template.
 ---
 
-# Arquitectura Híbrida 10/90 y Contexto Estático
+# Hybrid 10/90 Architecture and Static Context
 
 > [!IMPORTANT]
-> **PROHIBICIÓN DE CACHÉ (INMUTABILIDAD DE PREFIJO):** Queda estrictamente prohibido para cualquier agente o subagente editar la **SECCIÓN 1: CONTEXTO ESTÁTICO (INMUTABLE)** durante sesiones activas. Modificar esta sección superior invalida el prefijo de caché de contexto de los tokens de entrada. Cualquier nota dinámica o temporal debe registrarse en artefactos de sesión o en `scratch/`.
+> **PROMPT CACHING INTEGRITY (PREFIX IMMUTABILITY):** Any agent or subagent is strictly prohibited from editing **SECTION 1: STATIC CONTEXT (IMMUTABLE)** during active sessions. Modifying this upper section invalidates the input prompt token cache prefix. Any dynamic or ephemeral notes must be recorded in session artifacts or in `scratch/`.
 
 ---
 
-## SECCIÓN 1: CONTEXTO ESTÁTICO (INMUTABLE — PLANTILLA DE PROYECTO)
+## SECTION 1: STATIC CONTEXT (IMMUTABLE — PROJECT TEMPLATE)
 
-*(Personaliza esta sección en tu archivo local `~/.agents/rules/architecture-10-90.md` o en `.agents/rules/` de tu proyecto. Ver `examples/project-context.example.md`).*
+*(Customize this section in your local `~/.agents/rules/architecture-10-90.md` file or in your project's `.agents/rules/`. See `examples/project-context.example.md`).*
 
-### 1.1 Stack Tecnológico e Infraestructura
-- **Lenguaje Principal:** Python 3.12+ (`.venv` en `<PROJECT_ROOT>/.venv`) y TypeScript / React en `<PROJECT_ROOT>/webapp/`.
-- **Entornos de Datos:**
-  - **Base de Datos de Producción:** `<DB_PROD_HOST>:5432` (requiere `--apply` explícito y respaldo previo en `backups/`).
-  - **Base de Datos de Pruebas:** `<DB_STAGING_HOST>:5432`.
-  - **Almacenamiento de Objetos (S3 / MinIO):** `http://<STORAGE_HOST>:9000`.
+### 1.1 Technology Stack and Infrastructure
+- **Primary Languages:** Python 3.12+ (`.venv` in `<PROJECT_ROOT>/.venv`) and TypeScript / React in `<PROJECT_ROOT>/webapp/`.
+- **Data Environments:**
+  - **Production Database:** `<DB_PROD_HOST>:5432` (requires explicit `--apply` and prior backup in `backups/`).
+  - **Staging / Test Database:** `<DB_STAGING_HOST>:5432`.
+  - **Object Storage (S3 / MinIO):** `http://<STORAGE_HOST>:9000`.
 
-### 1.2 Estructura de Carpetas Estándar
+### 1.2 Standard Directory Structure
 ```text
 <PROJECT_ROOT>/
-├── .agents/                   # Configuración Antigravity (Rules, Workflows, Skills, Hooks)
-├── .venv/                     # Entorno virtual Python del proyecto
-├── backups/                   # Respaldos previos a mutaciones en bases de datos
-├── data/                      # Datos e insumos locales
-├── docs/                      # Documentación de arquitectura y diseño
-├── scratch/                   # Scripts efímeros de verificación y reportes para el asesor
-├── scripts/                   # Scripts de automatización y ETL
-└── webapp/                    # Aplicaciones backend y frontend
+├── .agents/                   # Antigravity configuration (Rules, Workflows, Skills, Hooks)
+├── .venv/                     # Project Python virtual environment
+├── backups/                   # Backups prior to database mutations
+├── data/                      # Local data and assets
+├── docs/                      # Architecture and design documentation
+├── scratch/                   # Ephemeral verification scripts and reports for the advisor
+├── scripts/                   # Automation and ETL scripts
+└── webapp/                    # Backend and frontend applications
 ```
 
-### 1.3 Convenciones e Invariantes Generales
-1. **Idempotencia y Seguridad en Base de Datos:**
-   - Todo script que modifique datos de producción debe operar en **modo simulación (`dry-run`) por defecto** y exigir la bandera explícita `--apply` tras generar respaldo en `backups/`.
-   - Los identificadores primarios o consecutivos son **APPEND-ONLY** (nunca reasignar IDs históricos).
+### 1.3 General Conventions and Invariants
+1. **Database Idempotency and Safety:**
+   - Any script that mutates production data must operate in **simulation mode (`dry-run`) by default** and require an explicit `--apply` flag after generating a backup in `backups/`.
+   - Primary and sequence identifiers are **APPEND-ONLY** (never reassign historical IDs).
 
 ---
 
-## SECCIÓN 2: PROTOCOLO DE MODELOS Y DELEGACIÓN (REGLA 10/90 — ORQUESTACIÓN 100% AUTOMÁTICA)
+## SECTION 2: MODEL AND DELEGATION PROTOCOL (10/90 RULE — 100% AUTOMATIC ORCHESTRATION)
 
-### 2.1 Operación Nativa Automática (y Workflows Manuales Opcionales)
-Por defecto, ante cualquier solicitud en lenguaje natural, el usuario **NO** necesita escribir comandos `/` ni cambiar manualmente el selector de modelo: **Gemini 4 Argon** actúa automáticamente como Arquitecto y Orquestador de principio a fin, delegando internamente el 90% del trabajo pesado a subagentes con `Model: "flash"` (**Gemini 3.8 Flash**). *(Los workflows `/plan-argon` y `/execute-plan` se incluyen únicamente como modo manual opcional).*
+### 2.1 Native Automatic Operation (and Optional Manual Workflows)
+By default, for any natural-language user prompt, the user does **NOT** need to type `/` commands or manually toggle model selectors: **Gemini 4 Argon** automatically acts as Architect and Orchestrator end-to-end, internally delegating 90% of the heavy lifting to subagents configured with `Model: "flash"` (**Gemini 3.8 Flash**). *(The `/plan-argon` and `/execute-plan` workflows are provided solely as an optional manual workflow).*
 
-### 2.2 Rol de Gemini 4 Argon (`Medium` / `High`) — 10% Orquestación y Arquitectura
-1. **Prohibiciones Estrictas de Cuota:** Queda prohibido gastar cuota de **Gemini 4 Argon** en:
-   - Leer árboles de archivos masivos, volcados CSV/JSON/TSV grandes o explorar directorios a ciegas.
-   - Escribir código repetitivo (boilerplate), scripts largos de transformación, componentes extensos o suites de tests.
-   - Ejecutar bucles de debugging de más de **2 intentos consecutivos**.
-2. **Responsabilidades Exclusivas de Argon:**
-   - Recibir la solicitud natural del usuario, diseñar la arquitectura de solución y tomar decisiones críticas.
-   - Congelar interfaces, esquemas SQL, contratos de API y estructuras de datos.
-   - Despachar automáticamente subagentes `flash` para explorar e implementar, y validar el resultado final antes de responder al usuario.
+### 2.2 Role of Gemini 4 Argon (`Medium` / `High`) — 10% Orchestration & Architecture
+1. **Strict Quota Restrictions:** Spending **Gemini 4 Argon** quota is strictly prohibited on:
+   - Reading massive file trees, large CSV/JSON/TSV dumps, or blindly exploring directories.
+   - Writing repetitive boilerplate code, long data transformation scripts, verbose UI components, or test suites.
+   - Running debugging loops exceeding **2 consecutive attempts**.
+2. **Exclusive Responsibilities of Argon:**
+   - Receive the user's natural language request, design the solution architecture, and make critical decisions.
+   - Freeze interfaces, SQL schemas, API contracts, and data structures.
+   - Automatically dispatch `flash` subagents for exploration and implementation, and validate the final output before responding to the user.
 
-### 2.3 Flujo Automático de Delegación a Subagentes (`Model: "flash"`) — 90% Exploración y Ejecución
-En toda tarea no trivial, Argon ejecuta automáticamente este ciclo sin pedir pasos manuales al usuario:
-1. **Fase 1 — Exploración Automática (`explorer` / `research` con `Model: "flash"`):**
-   - Argon invoca `invoke_subagent` con `Model: "flash"` para escanear archivos, esquemas de BD o logs y recibir solo un resumen compacto.
-2. **Fase 2 — Diseño y Contratos (Argon):**
-   - Argon define la arquitectura y el contrato exacto de los cambios. (Solo si la tarea modifica producción con `--apply` o tiene ambigüedad de negocio, Argon consulta al usuario; de lo contrario continúa automáticamente).
-3. **Fase 3 — Implementación y Pruebas Delegadas (`implementer` con `Model: "flash"`):**
-   - En lugar de escribir bloques largos de código en Argon, Argon invoca automáticamente a uno o varios subagentes `implementer` (`define_subagent` + `invoke_subagent` con `Model: "flash"`) pasándoles el contrato congelado para que escriban el código, ejecuten las validaciones y devuelvan el resumen de cambios.
-4. **Fase 4 — Verificación y Entrega (Argon):**
-   - Argon verifica que el trabajo de los subagentes `flash` cumpla el contrato e invariantes del proyecto y entrega la respuesta final lista al usuario.
+### 2.3 Automated Delegation Flow to Subagents (`Model: "flash"`) — 90% Exploration & Execution
+For every non-trivial task, Argon automatically runs this lifecycle without requiring manual user intervention:
+1. **Phase 1 — Automated Exploration (`explorer` / `research` with `Model: "flash"`):**
+   - Argon invokes `invoke_subagent` with `Model: "flash"` to scan files, database schemas, or logs, returning only a compact summary.
+2. **Phase 2 — Design and Contracts (Argon):**
+   - Argon defines the architecture and precise contract for the changes. (Only if the task mutates production with `--apply` or contains core business ambiguity does Argon prompt the user; otherwise, it proceeds automatically).
+3. **Phase 3 — Delegated Implementation and Testing (`implementer` with `Model: "flash"`):**
+   - Instead of writing large code blocks in Argon, Argon automatically dispatches one or more `implementer` subagents (`define_subagent` + `invoke_subagent` with `Model: "flash"`), supplying them with the frozen contract to author code, run tests, and return a change summary.
+4. **Phase 4 — Verification and Delivery (Argon):**
+   - Argon verifies that the subagents' work complies with the contract and project invariants, presenting the finished delivery to the user.
 
-### 2.4 Integración con el Protocolo de Asesoría Senior (Claude Opus)
-- Cumplir obligatoriamente las reglas de consulta a `asesor "<tipo>" < scratch/informe.md` (`plan`, `atasco`, `auditoria`, `enfoque`) definidas en `rules/protocolo-asesor-opus.md`.
+### 2.4 Integration with the Senior Advisor Protocol (Claude Opus)
+- Strictly comply with the consultation rules for `asesor "<type>" < scratch/report.md` (`plan`, `stuck`/`atasco`, `audit`/`auditoria`, `approach`/`enfoque`) specified in `rules/protocolo-asesor-opus.md`.

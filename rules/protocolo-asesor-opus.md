@@ -1,57 +1,60 @@
 ---
 trigger: always_on
-description: Protocolo de Asesoría Técnica Senior con Claude Opus (asesor CLI) para planes, atascos, auditorías pre-commit y cambios de enfoque.
+description: Senior Technical Advisory Protocol with Claude Opus (asesor CLI) for plans, stuck situations, pre-commit audits, and approach changes.
 ---
 
-# Protocolo de Asesoría Senior (Claude Opus)
+# Senior Technical Advisory Protocol (Claude Opus)
 
-Cuentas con un Asesor Técnico Senior (Claude Opus) accesible mediante el comando CLI:
-`asesor "<tipo>" < /ruta/informe.md`
+You have access to a Senior Technical Advisor (Claude Opus) via the CLI tool:
+`asesor "<type>" < /path/to/report.md`
 
-## 1. Principio Fundamental
-- **El Asesor es de SOLO LECTURA:** Se ejecuta sin herramientas locales ni servidores MCP (`--tools "" --strict-mcp-config --mcp-config '{"mcpServers":{}}'`). Su rol es consultivo: analiza, detecta riesgos arquitectónicos, evalúa causas raíz y audita cambios.
-- **Confidencialidad en informes:** Nunca incluyas contraseñas, tokens, claves API ni direccionamiento interno sensible en los informes enviados al asesor.
-- **Tú eres el ejecutor y decisor:** Tú eres responsable de inspeccionar el entorno, diseñar la solución, aplicar los cambios y ejecutar las pruebas. Lo que el asesor devuelve es una opinión calificada, no una orden.
+The CLI accepts consultation types in both English and Spanish: `plan`, `stuck` (or `atasco`), `audit` (or `auditoria`), and `approach` (or `enfoque`).
 
-## 2. Puntos de Consulta Obligatoria
-Debes invocar obligatoriamente al asesor en los siguientes 4 escenarios:
+## 1. Core Principles
+- **The Advisor is strictly READ-ONLY:** It runs with all local tools and MCP servers disabled (`--tools "" --strict-mcp-config --mcp-config '{"mcpServers":{}}'`). Its role is purely consultative: analyzing architecture, spotting hidden risks, evaluating root causes, and auditing diffs.
+- **Report Confidentiality:** Never include passwords, tokens, API keys, or sensitive internal network addresses in reports sent to the advisor.
+- **You are the Executor and Decision Maker:** You are responsible for inspecting the environment, designing the solution, executing changes, and running tests. The advisor provides qualified technical critique and guidance, not binding orders.
 
-1. **ANTES de editar (tipo: `plan`):**
-   - Si la tarea involucra modificar o crear **3 o más archivos**.
-   - Si altera la **arquitectura del sistema** (módulos, esquemas de BD, protocolos de red, dependencias clave o flujos de despliegue).
-   - Si toca entornos o ramas de producción.
-   *Flujo:* Primero exploras y verificas el estado actual, luego redactas el plan y consultas al asesor, y solo tras procesar su consejo comienzas a editar.
+## 2. Mandatory Consultation Gates
+You must invoke the advisor in the following four scenarios:
 
-2. **Segundo intento fallido (tipo: `atasco`):**
-   - Si un test, compilación o comando falla por **SEGUNDA vez** consecutiva tras un intento de solución, **DETENTE**.
-   - Queda estrictamente prohibido intentar un 3er parche a ciegas sin consultar al asesor con el diagnóstico del problema.
+1. **BEFORE modifying code (type: `plan`):**
+   - If the task involves creating or modifying **3 or more files**.
+   - If it alters **system architecture** (modules, database schemas, network protocols, core dependencies, or deployment workflows).
+   - If it touches production branches or environments.
+   *Workflow:* First explore and verify current system state, then draft the implementation plan and consult the advisor; only begin editing after processing its recommendations.
 
-3. **Auditoría final pre-cierre o pre-commit (tipo: `auditoria`):**
-   - Antes de dar por finalizada la tarea o solicitar aprobación para commit: guarda los cambios, genera el `git diff` completo y envíalo a Opus para que audite que el diff responde estrictamente al requerimiento original sin efectos secundarios ni código muerto.
+2. **Second consecutive failed attempt (type: `stuck` / `atasco`):**
+   - If a test, build, or command fails for a **SECOND consecutive time** after an attempted fix, **STOP IMMEDIATELY**.
+   - Attempting a 3rd blind fix without consulting the advisor with the diagnostic facts is strictly prohibited.
 
-4. **Cambio de rumbo o bloqueo técnico (tipo: `enfoque`):**
-   - Si una hipótesis de trabajo queda descartada o te encuentras sin avance claro y necesitas evaluar alternativas técnicas.
+3. **Final pre-completion or pre-commit audit (type: `audit` / `auditoria`):**
+   - Before completing the task or requesting commit approval: stage changes, generate the full `git diff`, and pass it to Opus to audit that the diff strictly addresses the original requirement without unintended side effects, regression risks, or dead code.
 
-*(Excepción: NO consultes al asesor en micro-cambios reactivos de 1 o 2 archivos conocidos, corrección de typos, consultas informativas de solo lectura o comandos cuyo resultado indique directamente el siguiente paso).*
+4. **Change of technical direction or impasse (type: `approach` / `enfoque`):**
+   - If a core working hypothesis is disproven or you find yourself at an impasse and need to evaluate alternative technical strategies.
 
-## 3. Protocolo de Comunicación con el Asesor
-El asesor **NO ve el historial de conversación ni los archivos del sistema en vivo**. Todo lo que sepa dependerá del informe que le pases por entrada estándar (`stdin`).
+*(Exception: Do NOT consult the advisor for trivial 1-2 file reactive edits, typo fixes, read-only informational queries, or commands whose output explicitly indicates the obvious next step).*
 
-### Estructura obligatoria del informe Markdown:
-Genera un archivo temporal (ej. en `scratch/informe_consulta.md`) con la siguiente estructura:
-- **Pedido original:** Requerimiento literal del usuario.
-- **Evidencia verificada:** Comandos ejecutados, archivos leídos, logs de error o puertos probados (hechos empíricos, no suposiciones).
-- **Supuestos o hipótesis:** Qué asumes que aún no se ha comprobado.
-- **Propuesta / Plan paso a paso:** Los pasos exactos que planeas ejecutar (para `plan` o `enfoque`) o el `git diff` (para `auditoria`).
+## 3. Communication Protocol with the Advisor
+The advisor **CANNOT view the conversation history or live system files**. Everything it knows comes strictly from the Markdown report provided via standard input (`stdin`).
 
-### Invocación CLI:
+### Mandatory Markdown Report Structure:
+Create a temporary report file (e.g., in `scratch/consultation_report.md`) with the following sections:
+- **Original Request:** The verbatim user requirement.
+- **Verified Evidence:** Executed commands, read files, error logs, or verified open ports (empirical facts, not assumptions).
+- **Assumptions or Hypotheses:** What you assume to be true that remains unverified.
+- **Proposal / Step-by-Step Plan:** Exact steps you plan to take (for `plan` or `approach`) or the full `git diff` (for `audit`).
+
+### CLI Invocation:
 ```bash
-asesor "plan" < scratch/informe_plan.md
-asesor "atasco" < scratch/informe_atasco.md
-asesor "auditoria" < scratch/informe_auditoria.md
-asesor "enfoque" < scratch/informe_enfoque.md
+# English or Spanish types are supported:
+asesor "plan" < scratch/plan_report.md
+asesor "stuck" < scratch/stuck_report.md        # or: asesor "atasco"
+asesor "audit" < scratch/audit_report.md        # or: asesor "auditoria"
+asesor "approach" < scratch/approach_report.md  # or: asesor "enfoque"
 ```
 
-## 4. Tratamiento Crítico de la Respuesta
-- **No aceptes recomendaciones a ciegas:** Si una sugerencia del asesor contradice evidencia empírica ya comprobada en la terminal, no la apliques en silencio: descártala con fundamento técnico o realiza una repregunta contrastando los datos.
-- **Puerta de seguridad (Gate de Usuario):** El visto bueno del asesor ("Adelante", "Aprobado") **NUNCA** sustituye la autorización explícita del usuario para acciones irreversibles (`git push`, despliegues en producción, borrados de carpetas o migraciones de datos).
+## 4. Critical Assessment of Advisor Feedback
+- **Do not blindly accept recommendations:** If an advisor suggestion contradicts empirical evidence already verified in your terminal, do not apply it silently: discard it with technical justification or send a follow-up query highlighting the discrepancy.
+- **Human-in-the-Loop Safety Gate:** The advisor's approval ("Go ahead", "Approved") **NEVER** substitutes explicit user authorization for irreversible operations (`git push`, production deployments, directory deletions, or database data mutations).

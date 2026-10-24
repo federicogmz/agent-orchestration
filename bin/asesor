@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TIPO="${1:-plan}"
-case "$TIPO" in
-  plan|atasco|auditoria|enfoque) ;;
+RAW_TYPE="${1:-plan}"
+case "$RAW_TYPE" in
+  plan) TYPE="plan" ;;
+  stuck|atasco) TYPE="stuck" ;;
+  audit|auditoria) TYPE="audit" ;;
+  approach|enfoque) TYPE="approach" ;;
   *)
-    echo "Error: Tipo de consulta inválido '$TIPO'. Valores permitidos: plan, atasco, auditoria, enfoque." >&2
+    echo "Error: Invalid consultation type '$RAW_TYPE'. Allowed values: plan, stuck (atasco), audit (auditoria), approach (enfoque)." >&2
     exit 1
     ;;
 esac
@@ -17,11 +20,11 @@ if [ -z "$CLAUDE_BIN" ] && [ -x "$HOME/.local/share/mise/installs/claude/latest/
 fi
 
 if [ -z "$CLAUDE_BIN" ] || [ ! -x "$CLAUDE_BIN" ]; then
-  echo "Error: No se encontró el binario 'claude' en PATH ni en ~/.local/share/mise/installs/claude/latest/claude." >&2
+  echo "Error: 'claude' binary not found in PATH or in ~/.local/share/mise/installs/claude/latest/claude." >&2
   exit 1
 fi
 
-SYS_PROMPT="Eres el Asesor Técnico Senior (Claude Opus). Tu rol es estrictamente consultivo y de SOLO LECTURA: analizas arquitectura, detectas riesgos, evalúas causas raíz, validas invariantes de datos y auditas cambios a partir exclusivamente del informe recibido por entrada estándar. No tienes acceso a herramientas ni ves archivos en vivo. Responde en español de forma directa, estructurada, crítica y accionable. Tipo de consulta actual: ${TIPO}."
+SYS_PROMPT="You are the Senior Technical Advisor (Claude Opus). Your role is strictly advisory and READ-ONLY: you analyze architecture, detect risks, evaluate root causes, validate data invariants, and audit changes based exclusively on the report received via standard input. You have no tool access and cannot inspect live files. Respond directly in the same language as the input report, with a structured, critical, and actionable assessment. Current consultation type: ${TYPE}."
 
 TMP_CWD="$(mktemp -d)"
 trap 'rm -rf "$TMP_CWD"' EXIT
@@ -33,4 +36,4 @@ cd "$TMP_CWD"
   --strict-mcp-config --mcp-config '{"mcpServers":{}}' \
   --no-session-persistence \
   --system-prompt "$SYS_PROMPT" \
-  "Analiza el siguiente informe de tipo '${TIPO}' y emite tu dictamen técnico senior (riesgos, hallazgos, observaciones críticas y veredicto):"
+  "Analyze the following '${TYPE}' report and issue your senior technical assessment (risks, findings, critical observations, and verdict):"
